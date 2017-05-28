@@ -35,7 +35,7 @@ public class CompilationChain<I: CompilationPhase, O: CompilationPhase> : Compil
 
 /// Base type for all compilation errors
 public class OrbitError : Error {
-    let message: String
+    public let message: String
     
     public init(message: String) {
         self.message = message
