@@ -1,3 +1,5 @@
+import Foundation
+
 /**
     When compiled, Orbit files run through a series of phases,
     each of which takes the output of a previous phase as its own input.
@@ -23,7 +25,7 @@ public class CompilationChain<I: CompilationPhase, O: CompilationPhase> : Compil
     let inputPhase: I
     let outputPhase: O
     
-    init(inputPhase: I, outputPhase: O) {
+    public init(inputPhase: I, outputPhase: O) {
         self.inputPhase = inputPhase
         self.outputPhase = outputPhase
     }
