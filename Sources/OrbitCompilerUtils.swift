@@ -43,3 +43,18 @@ public class OrbitError : Error {
         self.message = message
     }
 }
+
+public class SourceResolver : CompilationPhase {
+    public typealias InputType = String
+    public typealias OutputType = String
+    
+    public func execute(input: String) throws -> String {
+        guard let source = FileManager.default.contents(atPath: input) else {
+            throw OrbitError(message: "Could not find Orbit source file at \(input)")
+        }
+        
+        guard let str = String(data: source, encoding: .utf8) else { throw OrbitError(message: "Could not open source file: \(input)") }
+        
+        return str
+    }
+}
