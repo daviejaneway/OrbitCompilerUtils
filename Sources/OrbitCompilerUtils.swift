@@ -19,7 +19,7 @@ public class OrbitSession {
     
     public func popAll() {
         self.warnings.reversed().forEach { wrn in
-            print(wrn)
+            print(wrn.message)
         }
     }
 }
