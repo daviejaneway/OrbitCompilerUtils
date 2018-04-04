@@ -7,6 +7,8 @@ public struct OrbitWarning {
 public class OrbitSession {
     private var warnings = [OrbitWarning]()
     
+    public init() {}
+    
     public func push(warning: OrbitWarning) {
         self.warnings.append(warning)
     }
