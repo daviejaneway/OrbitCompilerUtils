@@ -2,6 +2,10 @@ import Foundation
 
 public struct OrbitWarning {
     public let message: String
+    
+    public init(message: String) {
+        self.message = message
+    }
 }
 
 public class OrbitSession {
