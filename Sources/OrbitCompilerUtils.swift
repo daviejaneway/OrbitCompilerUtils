@@ -8,10 +8,60 @@ public struct OrbitWarning {
     }
 }
 
+public struct OrbitModule {
+    public let absolutePath: String
+}
+
 public class OrbitSession {
     private var warnings = [OrbitWarning]()
+    private var modulePaths = [String]()
     
-    public init() {}
+    public init(modulePaths: [String] = []) {
+        self.modulePaths = modulePaths
+    }
+    
+    func add(modulePath: String) {
+        guard !self.modulePaths.contains(modulePath) else { return }
+        
+        self.modulePaths.append(modulePath)
+    }
+    
+    private func find(named: String, atPath: String) -> OrbitModule? {
+        var path = URL(fileURLWithPath: atPath)
+        path = path.appendingPathComponent(named)
+        
+        var isDir: ObjCBool = false
+        if FileManager.default.fileExists(atPath: path.absoluteString, isDirectory: &isDir) {
+            // Found the api in the current directory
+            if !isDir.boolValue {
+                // TODO: The module might be elsewhere on the path
+                return nil
+            }
+            
+            return OrbitModule(absolutePath: path.absoluteString)
+        }
+        
+        return nil
+    }
+    
+    /// Search for a compiled api across ORB_PATH
+    public func findApi(named: String) -> OrbitModule? {
+        if let mod = find(named: named, atPath: FileManager.default.currentDirectoryPath) {
+            return mod
+        }
+        
+        // TODO: Should really check every path for duplicates.
+        // User needs to decide what to do if multiple modules with same name
+        // exist on path
+        
+        for path in self.modulePaths {
+            if let mod = find(named: named, atPath: path) {
+                return mod
+            }
+        }
+        
+        return nil
+    }
     
     public func push(warning: OrbitWarning) {
         self.warnings.append(warning)
