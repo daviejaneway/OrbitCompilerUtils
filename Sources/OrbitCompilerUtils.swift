@@ -12,12 +12,37 @@ public struct OrbitModule {
     public let absolutePath: String
 }
 
+public protocol NameMangler {
+    func mangleTypeIdentifier(name: String) -> String
+}
+
+public protocol CallingConvention {
+    var mangler: NameMangler { get }
+    
+    init()
+}
+
+public class OrbitNameMangler : NameMangler {
+    public func mangleTypeIdentifier(name: String) -> String {
+        return name
+    }
+}
+
+public class OrbitCallingConvention : CallingConvention {
+    public let mangler: NameMangler = OrbitNameMangler()
+    
+    public required init() {}
+}
+
 public class OrbitSession {
     private var warnings = [OrbitWarning]()
     private var modulePaths = [String]()
     
-    public init(modulePaths: [String] = []) {
+    let callingConvention: CallingConvention
+    
+    public init(modulePaths: [String] = [], callingConvention: CallingConvention = OrbitCallingConvention()) {
         self.modulePaths = modulePaths
+        self.callingConvention = callingConvention
     }
     
     func add(modulePath: String) {
