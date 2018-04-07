@@ -34,15 +34,28 @@ public class OrbitCallingConvention : CallingConvention {
     public required init() {}
 }
 
+public protocol Annotation {
+    var identifier: String { get }
+}
+
+public protocol PhaseAnnotatonProtocol : Annotation {
+    var targetPhaseIdentifier: String { get }
+}
+
 public class OrbitSession {
     private var warnings = [OrbitWarning]()
     private var modulePaths = [String]()
+    public private(set) var annotations = [PhaseAnnotatonProtocol]()
     
-    let callingConvention: CallingConvention
+    public let callingConvention: CallingConvention
     
     public init(modulePaths: [String] = [], callingConvention: CallingConvention = OrbitCallingConvention()) {
         self.modulePaths = modulePaths
         self.callingConvention = callingConvention
+    }
+    
+    func add(annotation: PhaseAnnotatonProtocol) {
+        self.annotations.append(annotation)
     }
     
     func add(modulePath: String) {
@@ -109,11 +122,18 @@ public protocol CompilationPhase {
     associatedtype InputType
     associatedtype OutputType
     
+    var identifier: String { get }
     var session: OrbitSession { get }
     
-    init(session: OrbitSession)
+    init(session: OrbitSession, identifier: String)
     
     func execute(input: InputType) throws -> OutputType
+}
+
+public extension CompilationPhase {
+    func extractPhaseAnnotations() -> [PhaseAnnotatonProtocol] {
+        return self.session.annotations.filter { $0.targetPhaseIdentifier == self.identifier }
+    }
 }
 
 /**
@@ -125,21 +145,24 @@ public class CompilationChain<I: CompilationPhase, O: CompilationPhase> : Compil
     public typealias InputType = I.InputType
     public typealias OutputType = O.OutputType
     
+    public let identifier: String
     public let session: OrbitSession
     
     let inputPhase: I
     let outputPhase: O
     
-    public required init(session: OrbitSession) {
+    public required init(session: OrbitSession, identifier: String) {
         self.session = session
-        self.inputPhase = I(session: session)
-        self.outputPhase = O(session: session)
+        self.identifier = identifier
+        self.inputPhase = I(session: session, identifier: identifier)
+        self.outputPhase = O(session: session, identifier: identifier)
     }
     
     public init(inputPhase: I, outputPhase: O) {
         self.session = inputPhase.session
         self.inputPhase = inputPhase
         self.outputPhase = outputPhase
+        self.identifier = "\(inputPhase.identifier)->\(outputPhase.identifier)"
     }
     
     public func execute(input: I.InputType) throws -> OutputType {
@@ -160,9 +183,10 @@ public class SourceResolver : CompilationPhase {
     public typealias InputType = String
     public typealias OutputType = String
     
+    public let identifier = "Orb.Compiler.Frontend.SourceResolver"
     public let session: OrbitSession
     
-    public required init(session: OrbitSession) {
+    public required init(session: OrbitSession, identifier: String = "") {
         self.session = session
     }
     
