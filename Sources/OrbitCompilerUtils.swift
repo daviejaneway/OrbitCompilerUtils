@@ -36,6 +36,8 @@ public class OrbitCallingConvention : CallingConvention {
 
 public protocol Annotation {
     var identifier: String { get }
+    
+    func equal(toOther annotation: Annotation) -> Bool
 }
 
 public protocol PhaseAnnotatonProtocol : Annotation {

@@ -2,6 +2,13 @@ import XCTest
 @testable import OrbitCompilerUtils
 
 class TestPhaseA : CompilationPhase {
+    var identifier: String
+    
+    required init(session: OrbitSession, identifier: String) {
+        self.session = session
+        self.identifier = identifier
+    }
+    
     typealias InputType = String
     typealias OutputType = Int
     
@@ -9,6 +16,7 @@ class TestPhaseA : CompilationPhase {
     
     required init(session: OrbitSession) {
         self.session = session
+        self.identifier = ""
     }
     
     func execute(input: String) throws -> Int {
@@ -17,6 +25,13 @@ class TestPhaseA : CompilationPhase {
 }
 
 class TestPhaseB : CompilationPhase {
+    var identifier: String
+    
+    required init(session: OrbitSession, identifier: String) {
+        self.session = session
+        self.identifier = identifier
+    }
+    
     typealias InputType = Int
     typealias OutputType = String
     
@@ -24,6 +39,7 @@ class TestPhaseB : CompilationPhase {
     
     required init(session: OrbitSession) {
         self.session = session
+        self.identifier = ""
     }
     
     func execute(input: Int) throws -> String {
