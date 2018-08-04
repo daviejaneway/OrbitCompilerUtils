@@ -46,29 +46,30 @@ public protocol PhaseAnnotatonProtocol : Annotation {
 
 public class OrbitSession {
     private var warnings = [OrbitWarning]()
-    private var modulePaths = [String]()
-    public private(set) var annotations = [PhaseAnnotatonProtocol]()
+    
+    private let sourceFiles: [URL]
+    private let orbPaths: [URL]
     
     public let callingConvention: CallingConvention
     
-    public init(modulePaths: [String] = [], callingConvention: CallingConvention = OrbitCallingConvention()) {
-        self.modulePaths = modulePaths
+    public init(orbPaths: [URL] = [], sourceFiles: [URL] = [], callingConvention: CallingConvention = OrbitCallingConvention()) {
+        self.sourceFiles = sourceFiles
         self.callingConvention = callingConvention
+        self.orbPaths = orbPaths
     }
     
-    func add(annotation: PhaseAnnotatonProtocol) {
-        self.annotations.append(annotation)
-    }
-    
-    func add(modulePath: String) {
-        guard !self.modulePaths.contains(modulePath) else { return }
+    public func findApiMap(named: String) throws -> URL {
+        for path in self.orbPaths {
+            guard let result = self.find(named: named, atPath: path) else { continue }
+            
+            return result
+        }
         
-        self.modulePaths.append(modulePath)
+        throw OrbitError(message: "API '\(named)' not found in any path. Try adding -a <path_to_parent_directory>")
     }
     
-    private func find(named: String, atPath: String) -> OrbitModule? {
-        var path = URL(fileURLWithPath: atPath)
-        path = path.appendingPathComponent(named)
+    private func find(named: String, atPath: URL) -> URL? {
+        let path = atPath.appendingPathComponent(named)
         
         var isDir: ObjCBool = false
         if FileManager.default.fileExists(atPath: path.absoluteString, isDirectory: &isDir) {
@@ -78,26 +79,7 @@ public class OrbitSession {
                 return nil
             }
             
-            return OrbitModule(absolutePath: path.absoluteString)
-        }
-        
-        return nil
-    }
-    
-    /// Search for a compiled api across ORB_PATH
-    public func findApi(named: String) -> OrbitModule? {
-        if let mod = find(named: named, atPath: FileManager.default.currentDirectoryPath) {
-            return mod
-        }
-        
-        // TODO: Should really check every path for duplicates.
-        // User needs to decide what to do if multiple modules with same name
-        // exist on path
-        
-        for path in self.modulePaths {
-            if let mod = find(named: named, atPath: path) {
-                return mod
-            }
+            return path
         }
         
         return nil
@@ -130,12 +112,6 @@ public protocol CompilationPhase {
     init(session: OrbitSession, identifier: String)
     
     func execute(input: InputType) throws -> OutputType
-}
-
-public extension CompilationPhase {
-    func extractPhaseAnnotations() -> [PhaseAnnotatonProtocol] {
-        return self.session.annotations.filter { $0.targetPhaseIdentifier == self.identifier }
-    }
 }
 
 /**
@@ -197,7 +173,9 @@ public class SourceResolver : CompilationPhase {
             throw OrbitError(message: "Could not find Orbit source file at \(input)")
         }
         
-        guard let str = String(data: source, encoding: .utf8) else { throw OrbitError(message: "Could not open source file: \(input)") }
+        guard let str = String(data: source, encoding: .utf8) else {
+            throw OrbitError(message: "Could not open source file: \(input)")
+        }
         
         return str
     }
