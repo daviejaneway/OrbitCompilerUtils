@@ -72,7 +72,7 @@ public class OrbitSession {
         let path = atPath.appendingPathComponent(named)
         
         var isDir: ObjCBool = false
-        if FileManager.default.fileExists(atPath: path.absoluteString, isDirectory: &isDir) {
+        if FileManager.default.fileExists(atPath: path.path, isDirectory: &isDir) {
             // Found the api in the current directory
             if !isDir.boolValue {
                 // TODO: The module might be elsewhere on the path
