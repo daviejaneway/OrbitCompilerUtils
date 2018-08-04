@@ -60,7 +60,7 @@ public class OrbitSession {
     
     public func findApiMap(named: String) throws -> URL {
         for path in self.orbPaths {
-            guard let result = self.find(named: named, atPath: path) else { continue }
+            guard let result = try self.find(named: named, atPath: path) else { continue }
             
             return result
         }
@@ -68,16 +68,12 @@ public class OrbitSession {
         throw OrbitError(message: "API '\(named)' not found in any path. Try adding -a <path_to_parent_directory>")
     }
     
-    private func find(named: String, atPath: URL) -> URL? {
+    private func find(named: String, atPath: URL) throws -> URL? {
         let path = atPath.appendingPathComponent(named)
         
         var isDir: ObjCBool = false
         if FileManager.default.fileExists(atPath: path.path, isDirectory: &isDir) {
-            // Found the api in the current directory
-            if !isDir.boolValue {
-                // TODO: The module might be elsewhere on the path
-                return nil
-            }
+            guard !isDir.boolValue else { throw OrbitError(message: "Path '\(path.path)' is a directory, expected .api file") }
             
             return path
         }
