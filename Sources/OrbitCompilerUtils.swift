@@ -44,6 +44,16 @@ public protocol PhaseAnnotatonProtocol : Annotation {
     var targetPhaseIdentifier: String { get }
 }
 
+public enum OrbitFormat {
+    case Source
+    case API
+}
+
+public struct OrbitPath {
+    public let url: URL
+    public let format: OrbitFormat
+}
+
 public class OrbitSession {
     private var warnings = [OrbitWarning]()
     
@@ -58,11 +68,13 @@ public class OrbitSession {
         self.orbPaths = orbPaths
     }
     
-    public func findApiMap(named: String) throws -> URL {
+    public func findOrbitFile(named: String) throws -> OrbitPath {
         for path in self.orbPaths {
-            guard let result = try self.find(named: named, atPath: path) else { continue }
-            
-            return result
+            if let result = try self.find(named: "\(named).api", atPath: path) {
+                return OrbitPath(url: result, format: .API)
+            } else if let result = try self.find(named: "\(named).orb", atPath: path) {
+                return OrbitPath(url: result, format: .Source)
+            }
         }
         
         throw OrbitError(message: "API '\(named)' not found in any path. Try adding -a <path_to_parent_directory>")
@@ -144,12 +156,51 @@ public class CompilationChain<I: CompilationPhase, O: CompilationPhase> : Compil
     }
 }
 
+public enum TextColor : String {
+    case Red = "33"
+    case Green = "92"
+}
+
+public enum TextStyle : String {
+    case Regular = "0"
+    case Bold = "1"
+}
+
 /// Base type for all compilation errors
 public class OrbitError : Error {
     public let message: String
     
     public init(message: String) {
         self.message = message
+    }
+    
+    public static func format(string: String, color: TextColor, style: TextStyle) -> String {
+        // \u{001B}[1;92mSUCCESS\u{001B}[1;0m
+        return "\u{001B}[\(style.rawValue);\(color.rawValue)m\(string)\u{001B}[0;0m"
+    }
+}
+
+/*
+    Compilation errors fall into one of three categories:
+        1. A fatal error, usually a compiler bug. Compiler dev facing
+        2. An error arising from bad source code. Could come from any compilation phase. User facing
+        3. As 2, but error has known solutions. Compiler should present the problem and a list of possible solutions
+ 
+    All errors should report the following information:
+        a. The current compilation phase
+        b. File/line/character information
+ */
+public class OrbitFatal : OrbitError {
+    public override init(message: String) {
+        super.init(message: "\(OrbitError.format(string: "FATAL", color: .Red, style: .Bold)) \(message)")
+    }
+}
+
+public class OrbitProblem : OrbitError {
+    init(problem: String, solutions: [String]) {
+        let prob = OrbitError.format(string: "PROBLEM", color: .Red, style: .Bold)
+        let sltn = OrbitError.format(string: "SOLUTIONS", color: .Red, style: .Bold)
+        super.init(message: "\(prob)\n\t\(problem)\n\(sltn)\n\t\(solutions.enumerated().map { "\($0.offset). \($0.element)" }.joined(separator: "\n\t"))")
     }
 }
 
