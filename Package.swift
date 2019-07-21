@@ -11,10 +11,12 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "OrbitCompilerUtils"
+            name: "OrbitCompilerUtils",
+            path: "Sources"
         ),
         .testTarget(
-            name: "OrbitCompilerUtilsTests"
+            name: "OrbitCompilerUtilsTests",
+            path: "Tests"
         )
     ]
 )
