@@ -1,5 +1,9 @@
 import Foundation
 
+public struct Orbit {
+    
+}
+
 public struct OrbitWarning {
     public let message: String
     
