@@ -11,7 +11,7 @@ public protocol Phase {
     associatedtype InputType
     associatedtype OutputType
     
-    func execute(input: InputType) -> OutputType
+    func execute(input: InputType) throws -> OutputType
 }
 
 class Chain<I: Phase, O: Phase> : Phase where I.OutputType == O.InputType {
@@ -26,7 +26,7 @@ class Chain<I: Phase, O: Phase> : Phase where I.OutputType == O.InputType {
         self.outputPhase = outputPhase
     }
     
-    func execute(input: I.InputType) -> O.OutputType {
-        return self.outputPhase.execute(input: self.inputPhase.execute(input: input))
+    func execute(input: I.InputType) throws -> O.OutputType {
+        return try self.outputPhase.execute(input: self.inputPhase.execute(input: input))
     }
 }
